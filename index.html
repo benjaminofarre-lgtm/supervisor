@@ -3,61 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surfland Manager 21.0 (Debug)</title>
+    <title>Surfland Manager 22.0 (Online)</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2909/2909803.png">
+    
     <style>
-        :root { --primary: #0277bd; --secondary: #00838f; --accent: #f9a825; --bg: #f4f7f6; --text: #263238; --danger: #c62828; --success: #2e7d32; --locked: #9e9e9e; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        :root { --primary: #0277bd; --secondary: #00838f; --accent: #f9a825; --bg: #f4f7f6; --text: #263238; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
         
-        #loadingMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        /* DIAGNOSTIC LOADING */
+        #loadingMask { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.95); z-index: 9999; 
+            display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center;
+        }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #errorLog {
+            margin-top: 20px; color: #c62828; background: #ffebee; padding: 15px; 
+            border: 1px solid #ef5350; border-radius: 5px; font-family: monospace; 
+            max-width: 90%; display: none; text-align: left; font-size: 0.9em;
+        }
 
-        #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
-        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; width: 320px; color: var(--text); }
-        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cfd8dc; border-radius: 6px; box-sizing: border-box; }
-        .btn-login { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        /* OTRAS ESTILOS */
+        #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: linear-gradient(135deg, var(--primary), var(--secondary)); position: fixed; width: 100%; z-index: 1000; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; text-align: center; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cfd8dc; border-radius: 6px; box-sizing:border-box;}
+        .btn-login { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        .btn-login:hover { transform: translateY(-2px); }
         
         #appScreen { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; padding-bottom: 80px; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .controls { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 20px; border-left: 5px solid var(--accent); }
+        .controls { background: white; padding: 20px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 20px; border-left: 5px solid var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; font-size: 1.1em; }
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-success { background: #2e7d32; color: white; }
         .btn-secondary { background: #546e7a; color: white; }
         .btn-info { background: #0288d1; color: white; }
 
-        .schedule-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .team-banner { text-align: center; padding: 20px; color: white; font-size: 1.8em; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        .schedule-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .team-banner { text-align: center; padding: 20px; color: white; font-size: 1.8em; font-weight: 800; text-transform: uppercase; }
         .bg-kirra { background: linear-gradient(45deg, #1976d2, #42a5f5); }
         .bg-mundaka { background: linear-gradient(45deg, #388e3c, #66bb6a); }
         .bg-locked { background: #757575; }
 
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; vertical-align: middle; }
-        th { background: #fafafa; color: #546e7a; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        th { background: #fafafa; color: #546e7a; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; }
+        .row-disabled { opacity: 0.6; background: #fafafa; }
         
+        /* Inputs Tabela */
         .editable-name { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
-        .status-select { padding: 6px; border-radius: 4px; font-weight: bold; width: 130px; }
+        .status-select { padding: 6px; border-radius: 4px; font-weight: bold; width: 130px; border: 1px solid #ddd; }
         .status-fixo { background: #e8f5e9; color: #2e7d32; }
         .status-rotativo { background: #e3f2fd; color: #1565c0; }
         .status-free { background: #fff3e0; color: #ef6c00; }
-        .role-guia { color: #0277bd; font-weight: 800; }
-        .role-gv { color: #455a64; font-weight: 600; }
-        .row-disabled { opacity: 0.6; background: #fafafa; }
-        .check-status { transform: scale(1.3); cursor: pointer; accent-color: var(--success); }
+        .check-status { transform: scale(1.3); cursor: pointer; accent-color: #2e7d32; }
 
         .panel { display: none; position: fixed; top: 0; right: 0; width: 850px; height: 100%; background: white; box-shadow: -5px 0 25px rgba(0,0,0,0.2); z-index: 100; overflow-y: auto; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 99; }
         .panel-header { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #ddd; }
         .panel-content { padding: 20px; }
-
+        
         .list-row { display: flex; align-items: center; margin-bottom: 8px; gap: 5px; }
         .list-row input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
         .btn-trash { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; border-radius: 4px; padding: 5px 10px; cursor: pointer; }
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .config-section-title { font-weight: bold; color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 5px; display: block; }
         
         #lockedMessage { display: none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 6px; margin-top: 10px; font-weight: bold; text-align: center; border: 1px solid #ffcdd2; }
     </style>
@@ -65,42 +76,39 @@
 <body>
 
     <div id="loadingMask">
-        <div class="loader"></div>
-        <h3 id="loadingText" style="margin-top:20px; color:#555;">Carregando...</h3>
-        <button id="cancelLoad" style="display:none; margin-top:10px; background:#c62828; color:white;" onclick="forceCloseLoad()">Cancelar / Fechar</button>
+        <div class="spinner"></div>
+        <h3 id="loadingText" style="margin-top:20px; color:#555;">Conectando ao Google...</h3>
+        <div id="errorLog"></div>
+        <button id="btnCloseLoad" style="display:none; margin-top:20px; background:#c62828; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;" onclick="closeLoading()">FECHAR E TENTAR OFFLINE</button>
     </div>
 
     <div id="loginScreen" style="display:none;">
         <div class="login-box">
-            <h2 style="color:var(--primary); margin-bottom: 5px; letter-spacing: 1px;">SURFLAND</h2>
-            <p style="margin-top:0; color:#777; font-size:0.9em;">Gestão Online v21.0</p>
+            <h2 style="color:var(--primary); margin-bottom:5px;">SURFLAND</h2>
+            <p style="margin-top:0; color:#777;">Gestão Online v22.0</p>
             <div id="loginError" style="color: #d32f2f; background:#ffebee; padding:10px; border-radius:4px; font-size: 0.9em; display: none; margin-bottom: 15px;">Login Incorreto</div>
             <input type="text" id="userInput" placeholder="Usuário">
             <input type="password" id="passInput" placeholder="Senha">
-            <button class="btn-login" type="button" onclick="window.attemptLogin()">ENTRAR (SUPERVISOR)</button>
-            <button class="btn-login" style="background:#546e7a; margin-top:10px;" type="button" onclick="window.staffLogin()">Acesso Equipe</button>
+            <button class="btn-login" onclick="window.attemptLogin()">ENTRAR (SUPERVISOR)</button>
+            <button class="btn-login" style="background:#546e7a" onclick="window.staffLogin()">VISUALIZAR</button>
         </div>
     </div>
 
     <div id="appScreen">
         <div class="header-bar">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <h2 id="pageTitle" style="margin:0; color:var(--primary);">Organizador</h2>
-                <span id="userBadge" style="padding:4px 8px; border-radius:4px; font-weight:bold; font-size:0.8em;"></span>
-            </div>
-            <span class="logout-link" onclick="location.reload()" style="cursor:pointer; color:red;">Sair</span>
+            <h2 style="margin:0; color:var(--primary);">Organizador</h2>
+            <span onclick="location.reload()" style="cursor:pointer; color:#c62828; font-weight:bold;">Sair</span>
         </div>
 
         <div class="controls">
             <div style="flex-grow: 1;">
-                <label style="font-weight:bold; margin-right: 10px; color: var(--text);">📅 Data:</label>
-                <input type="date" id="datePicker" onchange="window.changeDate()" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family:inherit; font-size: 1rem;">
+                <label style="font-weight:bold;">📅 Data:</label>
+                <input type="date" id="datePicker" onchange="window.changeDate()" style="padding:10px; border-radius:6px; border:1px solid #ccc; font-family:inherit;">
                 <div id="lockedMessage">🔒 DATA PASSADA - APENAS LEITURA</div>
             </div>
-
-            <div style="display:flex; gap: 10px; flex-wrap:wrap;">
-                <button class="btn-info" onclick="window.openPanel('statsPanel')">📊 Placar de Justiça</button>
-                <div id="adminControls" style="display:none; gap: 10px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-info" onclick="window.openPanel('statsPanel')">📊 Placar</button>
+                <div id="adminControls" style="display:none; gap:10px;">
                     <button id="btnSave" class="btn-success" onclick="window.saveCurrentDay()">💾 SALVAR TUDO</button>
                     <button class="btn-secondary" onclick="window.openPanel('configPanel')">⚙️ Configurar</button>
                 </div>
@@ -110,78 +118,76 @@
         <div class="schedule-container">
             <div id="teamBanner" class="team-banner">...</div>
             <table id="scheduleTable">
-                <thead>
-                    <tr><th width="40">OK</th><th width="150">Função</th><th>Colaborador</th><th width="140">Status</th></tr>
-                </thead>
+                <thead><tr><th width="50">OK</th><th width="150">Função</th><th>Colaborador</th><th width="140">Status</th></tr></thead>
                 <tbody id="scheduleBody"></tbody>
             </table>
         </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="window.closeAllPanels()"></div>
-    
-    <div id="statsPanel" class="panel"><div class="panel-header"><h3>📊 Placar de Justiça (Desde 08/01/26)</h3><button onclick="window.closeAllPanels()">×</button></div><div class="panel-content" id="statsContent"></div></div>
+    <div id="statsPanel" class="panel"><div class="panel-header"><h3>📊 Placar de Justiça</h3><button onclick="window.closeAllPanels()">×</button></div><div class="panel-content" id="statsContent"></div></div>
 
     <div id="configPanel" class="panel">
-        <div class="panel-header"><h3>👥 Equipes</h3><button onclick="window.closeAllPanels()">×</button></div>
+        <div class="panel-header"><h3>👥 Configuração de Equipes</h3><button onclick="window.closeAllPanels()">×</button></div>
         <div class="panel-content">
-            <button class="btn-success" style="width:100%; margin-bottom:20px;" onclick="window.saveConfigToFirebase()">💾 SALVAR E ATUALIZAR TELA</button>
+            <button class="btn-success" style="width:100%; margin-bottom:20px; padding:15px;" onclick="window.saveConfigToFirebase()">💾 SALVAR NO FIREBASE E ATUALIZAR TELA</button>
             <div class="config-grid">
-                <div>
-                    <h3 style="color:var(--primary); margin:0;">🔵 KIRRA</h3>
-                    <br><span class="config-section-title">Guias FIXOS</span><div id="listKirraGuides"></div>
-                    <br><span class="config-section-title">GVs FIXOS</span><div id="listKirraGVs"></div>
-                    <br><span class="config-section-title">ROTATIVOS</span><div id="listKirraRot"></div>
+                <div style="border-right:1px dashed #ccc; padding-right:10px;">
+                    <h3 style="color:#0277bd; margin-top:0;">🔵 KIRRA</h3>
+                    <b style="display:block; margin-top:10px;">Guias Fixos:</b><div id="listKirraGuides"></div>
+                    <b style="display:block; margin-top:10px;">GVs Fixos:</b><div id="listKirraGVs"></div>
+                    <b style="display:block; margin-top:10px;">Rotativos:</b><div id="listKirraRot"></div>
                 </div>
                 <div>
-                    <h3 style="color:var(--success); margin:0;">🟢 MUNDAKA</h3>
-                    <br><span class="config-section-title">Guias FIXOS</span><div id="listMundakaGuides"></div>
-                    <br><span class="config-section-title">GVs FIXOS</span><div id="listMundakaGVs"></div>
-                    <br><span class="config-section-title">ROTATIVOS</span><div id="listMundakaRot"></div>
+                    <h3 style="color:#2e7d32; margin-top:0;">🟢 MUNDAKA</h3>
+                    <b style="display:block; margin-top:10px;">Guias Fixos:</b><div id="listMundakaGuides"></div>
+                    <b style="display:block; margin-top:10px;">GVs Fixos:</b><div id="listMundakaGVs"></div>
+                    <b style="display:block; margin-top:10px;">Rotativos:</b><div id="listMundakaRot"></div>
                 </div>
             </div>
-            <hr><h4 class="config-section-title">🟠 Freelancers (Banco)</h4><div id="listFreelancers" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+            <hr style="margin:20px 0;">
+            <h4 style="margin-bottom:5px;">🟠 Freelancers (Banco)</h4>
+            <div id="listFreelancers" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+        // =================================================================
+        // ✅ CLAVES INTEGRADAS CORRECTAMENTE
+        // =================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyBdtXwtt4QUImtxuMdWoHOSwohJYA257DA",
-            authDomain: "programa-de-escalas2.firebaseapp.com",
-            projectId: "programa-de-escalas2",
-            storageBucket: "programa-de-escalas2.firebasestorage.app",
-            messagingSenderId: "702700056246",
-            appId: "1:702700056246:web:7676a98f4a025463d24017"
+            apiKey: "AIzaSyAF1d4Uk8-cg4vXwbHLmtg_Kzg6bvCYqaU",
+            authDomain: "programa-de-escalas.firebaseapp.com",
+            projectId: "programa-de-escalas",
+            storageBucket: "programa-de-escalas.firebasestorage.app",
+            messagingSenderId: "693139321340",
+            appId: "1:693139321340:web:55d3b0f4af39ccf6078279"
         };
+        // =================================================================
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        let appConfig = {};
+        let app, db;
+        let appConfig = getDefaultData();
         let currentDayData = [];
         let isAdmin = false;
         let isLocked = false;
-        const BASE_DATE = new Date(2026, 0, 4); 
+        const BASE_DATE = new Date(2026, 0, 4);
 
-        // --- SISTEMA DE LOADING SEGURO ---
-        function showLoading(msg) {
-            const m = document.getElementById('loadingMask');
-            const t = document.getElementById('loadingText');
-            const c = document.getElementById('cancelLoad');
-            m.style.display = 'flex';
-            t.textContent = msg;
-            c.style.display = 'none';
-            // Se travar por 5 segundos, libera botão de cancelar
-            setTimeout(() => { c.style.display = 'block'; }, 5000);
-        }
+        // Funções Globais de Ajuda
+        window.closeLoading = () => { document.getElementById('loadingMask').style.display = 'none'; };
         
-        window.forceCloseLoad = function() {
-            document.getElementById('loadingMask').style.display = 'none';
-            alert("A operação demorou muito. Verifique sua conexão ou se as regras do Firebase estão bloqueadas.");
-        };
+        function showError(msg) {
+            const log = document.getElementById('errorLog');
+            const btn = document.getElementById('btnCloseLoad');
+            const txt = document.getElementById('loadingText');
+            txt.innerText = "Falha na Conexão";
+            txt.style.color = "red";
+            log.style.display = 'block';
+            log.innerHTML = `<strong>ERRO:</strong> ${msg}<br><br>Possíveis causas:<br>1. Banco de Dados não criado.<br>2. Regras de segurança bloqueadas (Coloque em 'Test Mode').`;
+            btn.style.display = 'block';
+        }
 
         // --- INICIALIZAÇÃO ---
         window.addEventListener('load', async () => {
@@ -189,83 +195,106 @@
             document.getElementById('datePicker').value = today.toISOString().split('T')[0];
 
             try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                
+                // Timeout de segurança: 5s
+                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido. O Firebase não respondeu.")), 5000));
+                
+                // Tenta ler configuração
                 const docRef = doc(db, "settings", "teams");
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    appConfig = docSnap.data();
-                } else {
-                    appConfig = getDefaultData();
-                    await setDoc(docRef, appConfig);
-                }
+                const docSnap = await Promise.race([getDoc(docRef), timeout]);
+
+                if (docSnap.exists()) appConfig = docSnap.data();
+                else await setDoc(docRef, appConfig); // Cria se não existe
+
                 document.getElementById('loadingMask').style.display = 'none';
                 document.getElementById('loginScreen').style.display = 'flex';
+
             } catch (e) {
-                console.error("Erro Fatal:", e);
-                document.getElementById('loadingText').innerHTML = `<span style="color:red">Erro Conexão: ${e.message}</span>`;
-                document.getElementById('cancelLoad').style.display = 'block';
-                // Carrega modo offline para não travar
-                appConfig = getDefaultData();
+                console.error(e);
+                showError(e.message);
+                // Permite usar offline com dados padrão se falhar
+                document.getElementById('btnCloseLoad').style.display = 'block';
             }
         });
 
-        // --- LOGIN ---
-        window.attemptLogin = function() {
-            const u = document.getElementById('userInput').value;
-            const p = document.getElementById('passInput').value;
-            if(u === "SUPERVISORSURFLAND" && p === "meupapitobenja") { isAdmin = true; showApp(); } 
-            else { document.getElementById('loginError').style.display = 'block'; }
-        };
-
-        window.staffLogin = function() { isAdmin = false; showApp(); };
-
-        function showApp() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('appScreen').style.display = 'block';
-            const badge = document.getElementById('userBadge');
-            const title = document.getElementById('pageTitle');
-            if(isAdmin) {
-                title.textContent = "Organizador";
-                badge.textContent = "SUPERVISOR"; badge.style.backgroundColor = "#e8f5e9"; badge.style.color = "#2e7d32";
-                document.getElementById('adminControls').style.display = 'flex';
-            } else {
-                title.textContent = "GUARDA-VIDAS MONSTRÃO DA SURFLAND";
-                badge.textContent = "VISUALIZAÇÃO"; badge.style.backgroundColor = "#fff3e0"; badge.style.color = "#ef6c00";
-            }
-            window.changeDate();
-        }
-
-        // --- LÓGICA DE DATAS ---
-        window.changeDate = async function() {
-            const dateStr = document.getElementById('datePicker').value;
-            if(!dateStr) return;
-
-            const selDate = new Date(dateStr + "T00:00:00");
-            const today = new Date(); today.setHours(0,0,0,0);
-            isLocked = (selDate < today);
+        // --- SALVAR CONFIG ---
+        window.saveConfigToFirebase = async function() {
+            document.getElementById('loadingMask').style.display = 'flex';
+            document.getElementById('loadingText').innerText = "Salvando...";
+            document.getElementById('errorLog').style.display = 'none';
             
-            document.getElementById('lockedMessage').style.display = isLocked ? 'block' : 'none';
-            if(document.getElementById('btnSave')) document.getElementById('btnSave').disabled = isLocked;
-
-            showLoading("Carregando Escala...");
             try {
-                const dayRef = doc(db, "days", dateStr);
-                const daySnap = await getDoc(dayRef);
-                if(daySnap.exists()) {
-                    currentDayData = daySnap.data().entries;
-                } else {
-                    currentDayData = generateMathSchedule(dateStr);
-                    if(!isLocked) await setDoc(dayRef, { entries: currentDayData });
+                // Timeout de 5s
+                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Demorou muito para salvar.")), 5000));
+                
+                await Promise.race([
+                    setDoc(doc(db, "settings", "teams"), appConfig),
+                    timeout
+                ]);
+
+                // Força recalcular dia atual com novos nomes
+                const dateStr = document.getElementById('datePicker').value;
+                if(dateStr && !isLocked) {
+                    currentDayData = generateMathSchedule(dateStr); 
+                    await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
+                    renderTable(currentDayData, dateStr, isLocked);
                 }
-                renderTable(currentDayData, dateStr);
-            } catch(e) { 
-                console.error(e); 
-                // Fallback local se der erro no banco
-                currentDayData = generateMathSchedule(dateStr);
-                renderTable(currentDayData, dateStr);
+                
+                alert("✅ Salvo com sucesso!");
+                window.closeAllPanels();
+                
+            } catch(e) {
+                showError(e.message);
             }
             document.getElementById('loadingMask').style.display = 'none';
         };
 
+        // --- RESTO DO SISTEMA ---
+        window.attemptLogin = function() {
+            const u = document.getElementById('userInput').value;
+            const p = document.getElementById('passInput').value;
+            if(u==="SUPERVISORSURFLAND" && p==="meupapitobenja") { isAdmin=true; showApp(); }
+            else document.getElementById('loginError').style.display='block';
+        };
+        window.staffLogin = () => { isAdmin=false; showApp(); };
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display='none';
+            document.getElementById('appScreen').style.display='block';
+            if(isAdmin) document.getElementById('adminControls').style.display='flex';
+            window.changeDate();
+        }
+
+        window.changeDate = async function() {
+            const dateStr = document.getElementById('datePicker').value;
+            if(!dateStr) return;
+            const parts = dateStr.split('-');
+            const selDate = new Date(parts[0], parts[1]-1, parts[2]); // Data correta sem fuso
+            const today = new Date(); today.setHours(0,0,0,0);
+            
+            isLocked = (selDate < today); 
+            document.getElementById('lockedMessage').style.display = isLocked ? 'block' : 'none';
+            if(document.getElementById('btnSave')) document.getElementById('btnSave').disabled = isLocked;
+
+            // 1. Gera localmente (instantâneo)
+            currentDayData = generateMathSchedule(dateStr);
+            renderTable(currentDayData, dateStr, isLocked);
+
+            // 2. Busca do banco (assíncrono)
+            if(db) {
+                try {
+                    const snap = await getDoc(doc(db, "days", dateStr));
+                    if(snap.exists()) {
+                        currentDayData = snap.data().entries;
+                        renderTable(currentDayData, dateStr, isLocked);
+                    }
+                } catch(e) { console.log("Erro ao buscar dia:", e); }
+            }
+        };
+
+        // --- LÓGICA DE ROTAÇÃO (LIQUIDIFICADOR v20) ---
         function generateMathSchedule(dateStr) {
             const parts = dateStr.split('-');
             const d = new Date(parts[0], parts[1]-1, parts[2]);
@@ -273,187 +302,125 @@
             const diffTime = Math.floor((d - BASE_DATE) / oneDay);
             
             const isKirra = (Math.abs(diffTime) % 2) === 0;
-            const shiftIndex = Math.floor(Math.abs(diffTime) / 2);
+            const shiftIdx = Math.floor(Math.abs(diffTime) / 2);
 
-            const listGuides = isKirra ? (appConfig.kirraGuides||[]) : (appConfig.mundakaGuides||[]);
-            const listGVs = isKirra ? (appConfig.kirraGVs||[]) : (appConfig.mundakaGVs||[]);
+            const listG = isKirra ? (appConfig.kirraGuides||[]) : (appConfig.mundakaGuides||[]);
+            const listGV = isKirra ? (appConfig.kirraGVs||[]) : (appConfig.mundakaGVs||[]);
             const listRot = isKirra ? (appConfig.kirraRot||[]) : (appConfig.mundakaRot||[]);
             const listFree = appConfig.freelancers || [];
 
-            let schedule = [];
+            let schedule = [], guidePool = [], gvTotalPool = [];
+
+            // 1. GUIAS (8 Vagas)
+            listG.forEach(n => guidePool.push({n, s:"FIXO"}));
+            const gNeed = 8 - guidePool.length;
+            const rotOffset = (shiftIdx * gNeed) % Math.max(1, listRot.length);
+            for(let i=0; i<gNeed; i++) {
+                let idx = (rotOffset + i) % listRot.length;
+                guidePool.push({n: listRot[idx], s:"ROTATIVO"});
+            }
+            guidePool = rotate(guidePool, shiftIdx); // Carrossel Guias
+            for(let i=0; i<8; i++) schedule.push({role:`Guide ${i+1}`, name:guidePool[i]?.n||"VAGA", status:guidePool[i]?.s||"ROTATIVO", active:true});
+
+            // 2. GVs (12 Vagas - Liquidificador Total)
+            listGV.forEach(n => gvTotalPool.push({n, s:"FIXO"})); // GVs Fixos
             
-            // 1. TIME DE GUIAS
-            let guidePool = [];
-            listGuides.forEach(n => guidePool.push({name: n, status: "FIXO"}));
-            
-            const slotsNeed = 8 - guidePool.length;
-            const rotOffsetGuides = (shiftIndex * slotsNeed) % Math.max(1, listRot.length);
-            
-            for(let i=0; i<slotsNeed; i++) {
-                let idx = (rotOffsetGuides + i) % listRot.length;
-                guidePool.push({name: listRot[idx], status: "ROTATIVO"});
+            const rotRem = listRot.length - gNeed; // Rotativos que sobraram
+            for(let i=0; i<rotRem; i++) {
+                let idx = (rotOffset + gNeed + i) % listRot.length;
+                gvTotalPool.push({n: listRot[idx], s:"ROTATIVO"});
             }
             
-            guidePool = rotateArray(guidePool, shiftIndex);
-
-            for(let i=0; i<8; i++) {
-                if(i < guidePool.length) schedule.push({ role: `Guide ${i+1}`, name: guidePool[i].name, status: guidePool[i].status, active: true });
-                else schedule.push({ role: `Guide ${i+1}`, name: "VAGA", status: "ROTATIVO", active: true });
-            }
-
-            // 2. TIME DE GVS (Mistura Total)
-            let gvTotalPool = [];
-            listGVs.forEach(n => gvTotalPool.push({name: n, status: "FIXO"}));
-            
-            const totalRot = listRot.length;
-            const rotUsed = slotsNeed;
-            const rotRemaining = totalRot - rotUsed;
-            for(let i=0; i<rotRemaining; i++) {
-                let idx = (rotOffsetGuides + rotUsed + i) % totalRot;
-                gvTotalPool.push({name: listRot[idx], status: "ROTATIVO"});
-            }
-
-            const gvSoFar = gvTotalPool.length;
+            const gvSoFar = gvTotalPool.length; // Freelancers completam
             const freeNeed = 12 - gvSoFar;
             if(freeNeed > 0) {
-                const freeOffset = (Math.abs(diffTime) * freeNeed) % Math.max(1, listFree.length);
+                const fOff = (Math.abs(diffTime) * freeNeed) % Math.max(1, listFree.length);
                 for(let i=0; i<freeNeed; i++) {
-                    let idx = (freeOffset + i) % listFree.length;
-                    gvTotalPool.push({name: listFree[idx], status: "FREELANCER"});
+                    let idx = (fOff + i) % listFree.length;
+                    gvTotalPool.push({n: listFree[idx], s:"FREELANCER"});
                 }
             }
-
-            gvTotalPool = rotateArray(gvTotalPool, shiftIndex);
-
+            
+            gvTotalPool = rotate(gvTotalPool, shiftIdx); // Carrossel TOTAL (GVs 1-12)
+            
             for(let i=0; i<12; i++) {
-                if(i < gvTotalPool.length) schedule.push({ role: `Guarda-Vidas ${i+1}`, name: gvTotalPool[i].name, status: gvTotalPool[i].status, active: true });
-                else schedule.push({ role: `Guarda-Vidas ${i+1}`, name: "VAGA", status: "FREELANCER", active: true });
+                schedule.push({role:`Guarda-Vidas ${i+1}`, name:gvTotalPool[i]?.n||"VAGA", status:gvTotalPool[i]?.s||"FREE", active:true});
             }
 
             return schedule;
         }
 
-        function rotateArray(arr, steps) {
-            if(!arr.length) return [];
-            const k = steps % arr.length;
-            return arr.slice(arr.length - k).concat(arr.slice(0, arr.length - k));
-        }
+        function rotate(arr, n) { if(!arr.length) return []; const k=n%arr.length; return arr.slice(arr.length-k).concat(arr.slice(0, arr.length-k)); }
 
-        function renderTable(data, dateStr) {
-            const tbody = document.getElementById('scheduleBody');
-            const banner = document.getElementById('teamBanner');
-            tbody.innerHTML = "";
+        function renderTable(data, dateStr, isLocked) {
+            const body = document.getElementById('scheduleBody'); body.innerHTML = "";
             const parts = dateStr.split('-');
             const d = new Date(parts[0], parts[1]-1, parts[2]);
-            const oneDay = 24 * 60 * 60 * 1000;
-            const diff = Math.floor((d - BASE_DATE) / oneDay);
-            const isKirra = (Math.abs(diff) % 2) === 0;
+            const isKirra = (Math.abs(Math.floor((d - BASE_DATE)/(86400000))) % 2) === 0;
             
-            if(isLocked) { banner.textContent = "HISTÓRICO BLOQUEADO"; banner.className = "team-banner bg-locked"; }
-            else { banner.textContent = isKirra ? "Equipe: KIRRA" : "Equipe: MUNDAKA"; banner.className = isKirra ? "team-banner bg-kirra" : "team-banner bg-mundaka"; }
+            const banner = document.getElementById('teamBanner');
+            if(isLocked) { banner.textContent="HISTÓRICO BLOQUEADO"; banner.className="team-banner bg-locked"; }
+            else { banner.textContent=isKirra?"Equipe: KIRRA":"Equipe: MUNDAKA"; banner.className=isKirra?"team-banner bg-kirra":"team-banner bg-mundaka"; }
 
-            data.forEach((entry, idx) => {
+            data.forEach((e, i) => {
                 const tr = document.createElement('tr');
-                if(!entry.active) tr.classList.add('row-disabled');
-                const disabled = isLocked ? "disabled" : "";
+                if(!e.active) tr.classList.add('row-disabled');
+                const dis = isLocked ? "disabled" : "";
                 
-                const check = isAdmin ? `<input type="checkbox" class="check-status" ${entry.active?'checked':''} onchange="window.toggleActive(${idx})" ${disabled}>` : (entry.active ? '✅' : '❌');
-                const nameInput = isAdmin ? `<input class="editable-name" value="${entry.name}" onchange="window.editName(${idx}, this.value)" ${disabled}>` : `<b>${entry.name}</b>`;
-                const select = isAdmin ? `<select class="status-select status-${entry.status.toLowerCase()}" onchange="window.editStatus(${idx}, this)" ${disabled}><option value="FIXO" ${entry.status=='FIXO'?'selected':''}>FIXO</option><option value="ROTATIVO" ${entry.status=='ROTATIVO'?'selected':''}>ROTATIVO</option><option value="FREELANCER" ${entry.status=='FREELANCER'?'selected':''}>FREELANCER</option></select>` : `<span style="font-weight:bold">${entry.status}</span>`;
-                const roleClass = entry.role.includes("Guide") ? "role-guia" : "role-gv";
-                tr.innerHTML = `<td>${check}</td><td class="${roleClass}">${entry.role}</td><td>${nameInput}</td><td>${select}</td>`;
-                tbody.appendChild(tr);
+                const chk = isAdmin ? `<input type="checkbox" class="check-status" ${e.active?'checked':''} onchange="window.upd(${i}, 'active', this.checked)" ${dis}>` : (e.active?'✅':'❌');
+                const inp = isAdmin ? `<input class="editable-name" value="${e.name}" onchange="window.upd(${i}, 'name', this.value)" ${dis}>` : `<b>${e.name}</b>`;
+                const sel = isAdmin ? `<select class="status-select status-${e.status.toLowerCase()}" onchange="window.upd(${i}, 'status', this.value)" ${dis}><option value="FIXO" ${e.status=='FIXO'?'selected':''}>FIXO</option><option value="ROTATIVO" ${e.status=='ROTATIVO'?'selected':''}>ROTATIVO</option><option value="FREELANCER" ${e.status=='FREELANCER'?'selected':''}>FREELANCER</option></select>` : `<span>${e.status}</span>`;
+                
+                const roleClass = e.role.includes("Guide") ? "role-guia" : "role-gv";
+                tr.innerHTML = `<td>${chk}</td><td class="${roleClass}"><b>${e.role}</b></td><td>${inp}</td><td>${sel}</td>`;
+                body.appendChild(tr);
             });
         }
 
-        // --- ACTIONS ---
-        window.saveCurrentDay = async function() {
-            const dateStr = document.getElementById('datePicker').value;
-            if(!dateStr || isLocked) return;
-            showLoading("Salvando...");
-            try {
-                await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
-                alert("Salvo no Banco de Dados!");
-            } catch(e) { alert("Erro ao salvar: " + e.message); }
-            document.getElementById('loadingMask').style.display = 'none';
-        };
+        window.upd = (i, f, v) => { currentDayData[i][f] = v; };
 
-        window.openPanel = async function(id) {
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById(id).style.display = 'block';
-            if(id === 'configPanel') renderConfig();
-            if(id === 'statsPanel') {
-                const div = document.getElementById('statsContent');
-                div.innerHTML = "Carregando...";
-                const snap = await getDocs(collection(db, "days"));
+        // Painel Config e Stats
+        window.openPanel = async (id) => {
+            document.getElementById(id).style.display='block'; document.getElementById('overlay').style.display='block';
+            if(id==='configPanel') renderCfg();
+            if(id==='statsPanel') {
+                const div = document.getElementById('statsContent'); div.innerHTML="Carregando...";
+                if(!db) return div.innerHTML="Sem conexão.";
+                const snap = await getDocs(collection(db,"days"));
                 let stats = {};
-                const CUTOFF_DATE = "2026-01-08"; 
-                snap.forEach(doc => { 
-                    if(doc.id < CUTOFF_DATE) return;
-                    doc.data().entries.forEach(entry => {
-                        let n = entry.name.trim();
-                        if(!n || n.includes("Vaga") || n.includes("Free")) return;
-                        if(!stats[n]) stats[n] = { g: 0, v: 0, t: 0 };
-                        if(entry.role.includes("Guide")) stats[n].g++; else stats[n].v++;
-                        stats[n].t++;
-                    }); 
+                snap.forEach(d => {
+                    if(d.id < "2026-01-08") return;
+                    d.data().entries.forEach(e => {
+                        if(!e.name || e.name.includes("VAGA") || e.name.includes("Free")) return;
+                        if(!stats[e.name]) stats[e.name]={g:0,v:0,t:0};
+                        if(e.role.includes("Guide")) stats[e.name].g++; else stats[e.name].v++;
+                        stats[e.name].t++;
+                    });
                 });
-                let html = `<table style="width:100%"><tr><th>Nome</th><th>Total</th><th>Guias</th><th>GVs</th></tr>`;
-                Object.keys(stats).sort().forEach(n => { html += `<tr><td>${n}</td><td>${stats[n].t}</td><td>${stats[n].g}</td><td>${stats[n].v}</td></tr>`; });
-                div.innerHTML = html + "</table>";
+                let h = `<table style="width:100%"><tr><th>Nome</th><th>Total</th><th>Guias</th><th>GVs</th></tr>`;
+                Object.keys(stats).sort().forEach(n => h+=`<tr><td>${n}</td><td>${stats[n].t}</td><td>${stats[n].g}</td><td>${stats[n].v}</td></tr>`);
+                div.innerHTML = h+"</table>";
             }
         };
+        window.closeAllPanels = () => { document.querySelectorAll('.panel').forEach(p=>p.style.display='none'); document.getElementById('overlay').style.display='none'; };
 
-        window.closeAllPanels = function() { document.querySelectorAll('.panel').forEach(p=>p.style.display='none'); document.getElementById('overlay').style.display='none'; };
-        window.toggleActive = (i) => { currentDayData[i].active = !currentDayData[i].active; };
-        window.editName = (i, val) => { currentDayData[i].name = val; };
-        window.editStatus = (i, el) => { currentDayData[i].status = el.value; el.className = "status-select status-" + el.value.toLowerCase(); };
-
-        function renderConfig() {
-            const keys = ['kirraGuides', 'kirraGVs', 'kirraRot', 'mundakaGuides', 'mundakaGVs', 'mundakaRot', 'freelancers'];
-            keys.forEach(k => {
-                const div = document.getElementById('list' + k.charAt(0).toUpperCase() + k.slice(1));
+        function renderCfg() {
+            const fields = ['kirraGuides','kirraGVs','kirraRot','mundakaGuides','mundakaGVs','mundakaRot','freelancers'];
+            fields.forEach(k => {
+                const div = document.getElementById('list'+k.charAt(0).toUpperCase()+k.slice(1));
                 if(div) {
                     div.innerHTML = "";
-                    (appConfig[k] || []).forEach((val, i) => {
-                        div.innerHTML += `<div class="list-row"><input value="${val}" onchange="window.updateAppConfig('${k}', ${i}, this.value)"><button class="btn-trash" onclick="window.removeItem('${k}', ${i})">🗑️</button></div>`;
+                    (appConfig[k]||[]).forEach((v, i) => {
+                        div.innerHTML += `<div class="list-row"><input value="${v}" onchange="appConfig.${k}[${i}]=this.value"><button class="btn-trash" onclick="appConfig.${k}.splice(${i},1); renderCfg()">🗑️</button></div>`;
                     });
-                    div.innerHTML += `<small style="color:blue; cursor:pointer" onclick="window.addItem('${k}')">+ Adicionar</small>`;
+                    div.innerHTML += `<small style="color:blue;cursor:pointer" onclick="if(!appConfig.${k})appConfig.${k}=[];appConfig.${k}.push('Novo');renderCfg()">+ Adicionar</small>`;
                 }
             });
         }
-        window.updateAppConfig = (k, i, v) => { appConfig[k][i] = v; };
-        window.addItem = (k) => { if(!appConfig[k]) appConfig[k]=[]; appConfig[k].push("Novo"); renderConfig(); };
-        window.removeItem = (k, i) => { if(confirm("Apagar?")) { appConfig[k].splice(i, 1); renderConfig(); } };
-
-        // SAVE CONFIG ROBUSTO
-        window.saveConfigToFirebase = async function() {
-            showLoading("Salvando configurações...");
-            try {
-                // 1. Salva Config
-                await setDoc(doc(db, "settings", "teams"), appConfig);
-                
-                // 2. Recalcula dia atual
-                const dateStr = document.getElementById('datePicker').value;
-                if(dateStr && !isLocked) {
-                    currentDayData = generateMathSchedule(dateStr); 
-                    await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
-                    renderTable(currentDayData, dateStr);
-                }
-                alert("Sucesso!");
-                window.closeAllPanels();
-            } catch(e) { 
-                alert("Erro: " + e.message); 
-            }
-            document.getElementById('loadingMask').style.display = 'none';
-        };
 
         function getDefaultData() {
-            return { kirraGuides: ["K1"], kirraGVs: ["KV1"], kirraRot: ["KR1"], mundakaGuides: ["M1"], mundakaGVs: ["MV1"], mundakaRot: ["MR1"], freelancers: ["F1"] };
+            return { kirraGuides: ["Guia K1"], kirraGVs: ["GV K1"], kirraRot: ["Rot K1"], mundakaGuides: ["Guia M1"], mundakaGVs: ["GV M1"], mundakaRot: ["Rot M1"], freelancers: ["Free 1"] };
         }
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
