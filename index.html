@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surfland Manager 22.0 - Conectado</title>
+    <title>Surfland Manager 23.0 - Live Update</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2909/2909803.png">
     <style>
         :root { --primary: #0277bd; --secondary: #00838f; --accent: #f9a825; --bg: #f4f7f6; --text: #263238; --danger: #c62828; --success: #2e7d32; --locked: #9e9e9e; }
@@ -26,8 +26,9 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; font-size: 1.1em; }
         .btn-secondary { background: #546e7a; color: white; }
-        .btn-info { background: #0288d1; color: white; }
         .btn-danger { background: var(--danger); color: white; }
+        .btn-small-add { background: #e3f2fd; color: #0277bd; border: 1px dashed #0277bd; width: 100%; padding: 5px; margin-top: 5px; font-size: 0.9em; }
+        .btn-small-add:hover { background: #bbdefb; }
 
         .schedule-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .team-banner { text-align: center; padding: 20px; color: white; font-size: 1.8em; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
@@ -61,13 +62,6 @@
         .config-section-title { font-weight: bold; color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 5px; display: block; }
         
         #lockedMessage { display: none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 6px; margin-top: 10px; font-weight: bold; text-align: center; border: 1px solid #ffcdd2; }
-
-        /* Estilos do Placar da Justiça */
-        .justice-score-high { color: #2e7d32; font-weight: bold; }
-        .justice-score-med { color: #f9a825; font-weight: bold; }
-        .justice-score-low { color: #c62828; font-weight: bold; }
-        .justice-form { background: #f1f8e9; padding: 15px; border-radius: 8px; border: 1px solid #c8e6c9; margin-bottom: 20px; }
-        .justice-history-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9em; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -77,7 +71,7 @@
     <div id="loginScreen" style="display:none;">
         <div class="login-box">
             <h2 style="color:var(--primary); margin-bottom: 5px; letter-spacing: 1px;">SURFLAND</h2>
-            <p style="margin-top:0; color:#777; font-size:0.9em;">Gestão & Placar da Justiça</p>
+            <p style="margin-top:0; color:#777; font-size:0.9em;">Gestão de Escalas</p>
             <div id="loginError" style="color: #d32f2f; background:#ffebee; padding:10px; border-radius:4px; font-size: 0.9em; display: none; margin-bottom: 15px;">Login Incorreto</div>
             <input type="text" id="userInput" placeholder="Usuário">
             <input type="password" id="passInput" placeholder="Senha">
@@ -102,12 +96,9 @@
                 <div id="lockedMessage">🔒 DATA PASSADA - APENAS LEITURA</div>
             </div>
 
-            <div style="display:flex; gap: 10px; flex-wrap:wrap;">
-                <button class="btn-info" onclick="window.openPanel('justicePanel')">⚖️ PLACAR DA JUSTIÇA</button>
-                <div id="adminControls" style="display:none; gap: 10px;">
-                    <button id="btnSave" class="btn-success" onclick="window.saveCurrentDay()">💾 SALVAR ESCALA</button>
-                    <button class="btn-secondary" onclick="window.openPanel('configPanel')">⚙️ Configurar Times</button>
-                </div>
+            <div id="adminControls" style="display:none; gap: 10px;">
+                <button id="btnSave" class="btn-success" onclick="window.saveCurrentDay()">💾 SALVAR ESCALA</button>
+                <button class="btn-secondary" onclick="window.openPanel('configPanel')">⚙️ Configurar Times</button>
             </div>
         </div>
 
@@ -124,27 +115,6 @@
 
     <div class="overlay" id="overlay" onclick="window.closeAllPanels()"></div>
     
-    <div id="justicePanel" class="panel">
-        <div class="panel-header">
-            <h3>⚖️ Placar da Justiça (Comportamental)</h3>
-            <button onclick="window.closeAllPanels()">×</button>
-        </div>
-        <div class="panel-content">
-            <div id="justiceAdminArea" class="justice-form" style="display:none;">
-                <h4 style="margin-top:0;">👮 Registrar Ocorrência (Supervisor)</h4>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                    <select id="justiceSelectGV" style="padding:8px; border-radius:4px; border:1px solid #ccc;"><option>Carregando...</option></select>
-                    <input type="number" id="justicePoints" placeholder="Pontos (ex: 5 ou -10)" style="padding:8px; border-radius:4px; border:1px solid #ccc;">
-                </div>
-                <input type="text" id="justiceReason" placeholder="Motivo (ex: Chegou cedo, Faltou sem aviso...)" style="width:96%; padding:8px; border-radius:4px; border:1px solid #ccc; margin-bottom:10px;">
-                <button class="btn-primary" onclick="window.addJusticeEvent()">Salvar Ocorrência</button>
-            </div>
-
-            <h4 style="margin-bottom:10px;">🏆 Ranking Atual</h4>
-            <div id="justiceRankingTable">Carregando dados...</div>
-        </div>
-    </div>
-
     <div id="configPanel" class="panel">
         <div class="panel-header"><h3>👥 Configuração de Times</h3><button onclick="window.closeAllPanels()">×</button></div>
         <div class="panel-content">
@@ -163,13 +133,14 @@
                     <br><span class="config-section-title">ROTATIVOS</span><div id="listMundakaRot"></div>
                 </div>
             </div>
-            <hr><h4 class="config-section-title">🟠 Freelancers (Banco)</h4><div id="listFreelancers" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+            <hr><h4 class="config-section-title">🟠 Freelancers (Banco)</h4>
+            <div id="listFreelancers" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         // ============================================
         // ⚠️ CONFIGURAÇÃO REAL CONECTADA ⚠️
@@ -184,7 +155,6 @@
         };
         // ============================================
 
-        // Dados Padrão (Isso garante que a tela apareça mesmo sem internet)
         function getDefaultData() {
             return {
                 kirraGuides: ["Guia K1", "Guia K2"], kirraGVs: ["GV K1", "GV K2"], kirraRot: ["Rot K1", "Rot K2"], 
@@ -195,13 +165,12 @@
 
         let appConfig = getDefaultData(); 
         let currentDayData = [];
-        let justiceData = {}; // Guarda os scores
         let isAdmin = false;
         let isLocked = false;
         const BASE_DATE = new Date(2026, 0, 4); 
+        const START_DATE_LIMIT = new Date(2026, 0, 6); // 06 de Janeiro de 2026
         let db;
 
-        // --- INICIALIZAÇÃO SEGURA ---
         window.addEventListener('load', async () => {
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -217,10 +186,6 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     appConfig = docSnap.data();
-                } else {
-                    // Se for o primeiro acesso, tenta criar o documento inicial
-                    // (Isso pode falhar se as regras de segurança do Firebase bloquearem escrita anônima/pública)
-                    try { await setDoc(docRef, appConfig); } catch(e){}
                 }
             } catch (e) {
                 console.warn("Modo Offline ou Erro Config: ", e);
@@ -231,7 +196,6 @@
             window.changeDate(); 
         });
 
-        // --- LOGIN ---
         window.attemptLogin = function() {
             const u = document.getElementById('userInput').value;
             const p = document.getElementById('passInput').value;
@@ -254,7 +218,6 @@
                 title.textContent = "Organizador";
                 badge.textContent = "SUPERVISOR"; badge.style.backgroundColor = "#e8f5e9"; badge.style.color = "#2e7d32";
                 document.getElementById('adminControls').style.display = 'flex';
-                document.getElementById('justiceAdminArea').style.display = 'block'; // Mostra area de add pontos
             } else {
                 title.textContent = "GUARDA-VIDAS SURFLAND";
                 badge.textContent = "VISUALIZAÇÃO"; badge.style.backgroundColor = "#fff3e0"; badge.style.color = "#ef6c00";
@@ -262,7 +225,6 @@
             window.changeDate();
         }
 
-        // --- LÓGICA DE DATAS ---
         window.changeDate = async function() {
             const dateStr = document.getElementById('datePicker').value;
             if(!dateStr) return;
@@ -271,8 +233,20 @@
             const selDate = new Date(parts[0], parts[1]-1, parts[2]);
             const today = new Date(); today.setHours(0,0,0,0);
             
+            if (selDate < START_DATE_LIMIT) {
+                currentDayData = [];
+                renderTable([], dateStr);
+                document.getElementById('teamBanner').textContent = "AGUARDANDO INÍCIO (06/01)";
+                document.getElementById('teamBanner').className = "team-banner bg-locked";
+                document.getElementById('lockedMessage').style.display = 'block';
+                document.getElementById('lockedMessage').textContent = "🔒 DADOS INDISPONÍVEIS ANTES DE 06/01/2026";
+                if(document.getElementById('btnSave')) document.getElementById('btnSave').disabled = true;
+                return;
+            }
+
             isLocked = (selDate < today);
             document.getElementById('lockedMessage').style.display = isLocked ? 'block' : 'none';
+            document.getElementById('lockedMessage').textContent = "🔒 DATA PASSADA - APENAS LEITURA";
             if(document.getElementById('btnSave')) document.getElementById('btnSave').disabled = isLocked;
 
             currentDayData = generateMathSchedule(dateStr);
@@ -292,7 +266,6 @@
             }
         };
 
-        // --- LÓGICA DE ROTAÇÃO (V20) ---
         function generateMathSchedule(dateStr) {
             const parts = dateStr.split('-');
             const d = new Date(parts[0], parts[1]-1, parts[2]);
@@ -371,6 +344,11 @@
             const banner = document.getElementById('teamBanner');
             tbody.innerHTML = "";
             
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:#aaa;">Sem escala disponível</td></tr>`;
+                return;
+            }
+
             const parts = dateStr.split('-');
             const d = new Date(parts[0], parts[1]-1, parts[2]);
             const diff = Math.floor((d - BASE_DATE) / (1000 * 60 * 60 * 24));
@@ -393,7 +371,6 @@
             });
         }
 
-        // --- AÇÕES GERAIS ---
         window.saveCurrentDay = async function() {
             if(!db) return alert("Erro: Firebase não conectado.");
             const dateStr = document.getElementById('datePicker').value;
@@ -409,121 +386,8 @@
         window.openPanel = async function(id) {
             document.getElementById('overlay').style.display = 'block';
             document.getElementById(id).style.display = 'block';
-            
             if(id === 'configPanel') renderConfig();
-            
-            if(id === 'justicePanel') {
-                if(!db) return alert("Firebase desconectado.");
-                await loadJusticeBoard();
-            }
         };
-
-        // --- PLACAR DA JUSTIÇA LOGIC ---
-        async function loadJusticeBoard() {
-            const container = document.getElementById('justiceRankingTable');
-            const select = document.getElementById('justiceSelectGV');
-            container.innerHTML = "Carregando pontuações...";
-            
-            try {
-                // Pega todos os nomes cadastrados para preencher o select
-                let allNames = new Set();
-                ["kirraGuides", "kirraGVs", "kirraRot", "mundakaGuides", "mundakaGVs", "mundakaRot", "freelancers"].forEach(key => {
-                    if(appConfig[key]) appConfig[key].forEach(n => allNames.add(n));
-                });
-
-                // Preenche o Select do Admin
-                select.innerHTML = '<option value="">Selecione o Guarda-Vidas</option>';
-                [...allNames].sort().forEach(name => {
-                    select.innerHTML += `<option value="${name}">${name}</option>`;
-                });
-
-                // Busca scores do Firebase (Collection: justice_scores)
-                const querySnapshot = await getDocs(collection(db, "justice_scores"));
-                justiceData = {};
-                querySnapshot.forEach((doc) => {
-                    justiceData[doc.id] = doc.data();
-                });
-
-                // Monta Ranking (Quem não tem registro, começa com 100)
-                let ranking = [];
-                allNames.forEach(name => {
-                    let score = (justiceData[name] && justiceData[name].score !== undefined) ? justiceData[name].score : 100;
-                    ranking.push({ name: name, score: score });
-                });
-
-                // Ordena do maior para o menor
-                ranking.sort((a, b) => b.score - a.score);
-
-                // Renderiza HTML
-                let html = `<table style="width:100%"><tr><th>Pos</th><th>Nome</th><th>Score</th><th>Status</th></tr>`;
-                ranking.forEach((r, i) => {
-                    let statusColor = "justice-score-low";
-                    let icon = "🔴";
-                    if(r.score >= 90) { statusColor = "justice-score-high"; icon = "🟢"; }
-                    else if(r.score >= 70) { statusColor = "justice-score-med"; icon = "🟡"; }
-
-                    html += `<tr>
-                        <td>#${i+1}</td>
-                        <td>${r.name}</td>
-                        <td class="${statusColor}" style="font-size:1.2em">${r.score}</td>
-                        <td>${icon}</td>
-                    </tr>`;
-                });
-                html += "</table>";
-                
-                // Histórico recente (Opcional, mostra do primeiro do ranking apenas como exemplo)
-                html += `<p style="font-size:0.8em; color:#777; margin-top:10px;">* Pontuação padrão inicial: 100 pts.</p>`;
-                
-                container.innerHTML = html;
-
-            } catch (e) {
-                console.error(e);
-                container.innerHTML = "Erro ao carregar ranking: " + e.message;
-            }
-        }
-
-        window.addJusticeEvent = async function() {
-            if(!isAdmin) return alert("Apenas supervisores.");
-            const name = document.getElementById('justiceSelectGV').value;
-            const points = parseInt(document.getElementById('justicePoints').value);
-            const reason = document.getElementById('justiceReason').value;
-
-            if(!name || !points || !reason) return alert("Preencha todos os campos!");
-
-            document.getElementById('loadingMask').style.display = 'flex';
-            
-            try {
-                const gvRef = doc(db, "justice_scores", name);
-                const gvSnap = await getDoc(gvRef);
-                
-                let currentScore = 100;
-                if(gvSnap.exists()) {
-                    currentScore = gvSnap.data().score;
-                }
-
-                let newScore = currentScore + points;
-
-                // Salva ou atualiza
-                await setDoc(gvRef, {
-                    score: newScore,
-                    history: arrayUnion({
-                        date: new Date().toISOString(),
-                        reason: reason,
-                        points: points,
-                        author: "Supervisor"
-                    })
-                }, { merge: true });
-
-                alert(`✅ ${points} pontos para ${name}.\nScore Atual: ${newScore}`);
-                document.getElementById('justicePoints').value = "";
-                document.getElementById('justiceReason').value = "";
-                await loadJusticeBoard(); // Recarrega tabela
-
-            } catch(e) {
-                alert("Erro ao salvar: " + e.message);
-            }
-            document.getElementById('loadingMask').style.display = 'none';
-        }
 
         window.closeAllPanels = function() { document.querySelectorAll('.panel').forEach(p=>p.style.display='none'); document.getElementById('overlay').style.display='none'; };
         window.toggleActive = (i) => { currentDayData[i].active = !currentDayData[i].active; };
@@ -532,33 +396,60 @@
 
         function renderConfig() {
             const keys = ['kirraGuides', 'kirraGVs', 'kirraRot', 'mundakaGuides', 'mundakaGVs', 'mundakaRot', 'freelancers'];
+            
             keys.forEach(k => {
                 const div = document.getElementById('list' + k.charAt(0).toUpperCase() + k.slice(1));
                 if(div) {
-                    div.innerHTML = "";
-                    (appConfig[k] || []).forEach((val, i) => {
-                        div.innerHTML += `<div class="list-row"><input value="${val}" onchange="window.updateAppConfig('${k}', ${i}, this.value)"><button class="btn-trash" onclick="window.removeItem('${k}', ${i})">🗑️</button></div>`;
+                    let html = "";
+                    const list = appConfig[k] || [];
+                    list.forEach((val, i) => {
+                        if(k === 'freelancers') {
+                            html += `<div class="list-row" style="width:140px; display:inline-flex;">
+                                            <input value="${val}" onchange="window.updateAppConfig('${k}', ${i}, this.value)" style="width:80px">
+                                            <button class="btn-trash" onclick="window.removeItem('${k}', ${i})">🗑️</button>
+                                     </div>`;
+                        } else {
+                            html += `<div class="list-row">
+                                            <input value="${val}" onchange="window.updateAppConfig('${k}', ${i}, this.value)">
+                                            <button class="btn-trash" onclick="window.removeItem('${k}', ${i})">🗑️</button>
+                                     </div>`;
+                        }
                     });
-                    div.innerHTML += `<small style="color:blue; cursor:pointer" onclick="window.addItem('${k}')">+ Adicionar</small>`;
+                    
+                    const btnStyle = k === 'freelancers' ? "width:140px; margin:0;" : "width:100%;";
+                    html += `<button type="button" class="btn-small-add" style="${btnStyle}" onclick="window.addItem('${k}')">+ Adicionar</button>`;
+                    div.innerHTML = html;
                 }
             });
         }
+
         window.updateAppConfig = (k, i, v) => { appConfig[k][i] = v; };
         window.addItem = (k) => { if(!appConfig[k]) appConfig[k]=[]; appConfig[k].push("Novo"); renderConfig(); };
-        window.removeItem = (k, i) => { if(confirm("Apagar?")) { appConfig[k].splice(i, 1); renderConfig(); } };
+        window.removeItem = (k, i) => { if(confirm("Apagar slot?")) { appConfig[k].splice(i, 1); renderConfig(); } };
 
         window.saveConfigToFirebase = async function() {
             if(!db) return alert("Firebase desconectado.");
             document.getElementById('loadingMask').style.display = 'flex';
             try {
+                // 1. Salva a Configuração Nova
                 await setDoc(doc(db, "settings", "teams"), appConfig);
+                
+                // 2. Tenta atualizar a tela atual imediatamente
                 const dateStr = document.getElementById('datePicker').value;
                 if(dateStr && !isLocked) {
-                    currentDayData = generateMathSchedule(dateStr); 
-                    await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
+                    const selDate = new Date(dateStr);
+                    if(selDate >= START_DATE_LIMIT) { 
+                        // Regera a matemática com os NOMES NOVOS
+                        currentDayData = generateMathSchedule(dateStr); 
+                        
+                        // Atualiza no banco o dia atual com a nova escala
+                        await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
+                        
+                        // FORÇA A ATUALIZAÇÃO VISUAL IMEDIATA
+                        renderTable(currentDayData, dateStr);
+                    }
                 }
                 alert("Configurações Salvas e Tela Atualizada!");
-                window.changeDate();
                 window.closeAllPanels();
             } catch(e) { alert("Erro: " + e.message); }
             document.getElementById('loadingMask').style.display = 'none';
