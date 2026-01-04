@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surfland Manager 21.0</title>
+    <title>Surfland Manager 21.0 (Debug)</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2909/2909803.png">
     <style>
         :root { --primary: #0277bd; --secondary: #00838f; --accent: #f9a825; --bg: #f4f7f6; --text: #263238; --danger: #c62828; --success: #2e7d32; --locked: #9e9e9e; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
         
-        #loadingMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        #loadingMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -64,7 +64,11 @@
 </head>
 <body>
 
-    <div id="loadingMask"><div class="loader"></div><h3 style="margin-top:20px; color:#555;">Carregando...</h3></div>
+    <div id="loadingMask">
+        <div class="loader"></div>
+        <h3 id="loadingText" style="margin-top:20px; color:#555;">Carregando...</h3>
+        <button id="cancelLoad" style="display:none; margin-top:10px; background:#c62828; color:white;" onclick="forceCloseLoad()">Cancelar / Fechar</button>
+    </div>
 
     <div id="loginScreen" style="display:none;">
         <div class="login-box">
@@ -142,82 +146,74 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-        // ============================================
-        // ⚠️ PEGA AQUÍ TUS CLAVES DE FIREBASE ⚠️
-        // ============================================
         const firebaseConfig = {
-            apiKey: "PON_AQUI_TU_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            projectId: "TU_PROJECT_ID",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "NUMEROS",
-            appId: "NUMEROS"
+            apiKey: "AIzaSyBdtXwtt4QUImtxuMdWoHOSwohJYA257DA",
+            authDomain: "programa-de-escalas2.firebaseapp.com",
+            projectId: "programa-de-escalas2",
+            storageBucket: "programa-de-escalas2.firebasestorage.app",
+            messagingSenderId: "702700056246",
+            appId: "1:702700056246:web:7676a98f4a025463d24017"
         };
-        // ============================================
 
-        // Dados Padrão (Isso garante que a tela apareça mesmo sem internet)
-        function getDefaultData() {
-            return {
-                kirraGuides: ["Guia K1", "Guia K2"], kirraGVs: ["GV K1", "GV K2"], kirraRot: ["Rot K1", "Rot K2"], 
-                mundakaGuides: ["Guia M1", "Guia M2"], mundakaGVs: ["GV M1", "GV M2"], mundakaRot: ["Rot M1", "Rot M2"], 
-                freelancers: ["Free 1", "Free 2"]
-            };
-        }
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        let appConfig = getDefaultData(); // Inicia com padrão para não travar
+        let appConfig = {};
         let currentDayData = [];
         let isAdmin = false;
         let isLocked = false;
         const BASE_DATE = new Date(2026, 0, 4); 
-        let db;
 
-        // --- INICIALIZAÇÃO SEGURA ---
+        // --- SISTEMA DE LOADING SEGURO ---
+        function showLoading(msg) {
+            const m = document.getElementById('loadingMask');
+            const t = document.getElementById('loadingText');
+            const c = document.getElementById('cancelLoad');
+            m.style.display = 'flex';
+            t.textContent = msg;
+            c.style.display = 'none';
+            // Se travar por 5 segundos, libera botão de cancelar
+            setTimeout(() => { c.style.display = 'block'; }, 5000);
+        }
+        
+        window.forceCloseLoad = function() {
+            document.getElementById('loadingMask').style.display = 'none';
+            alert("A operação demorou muito. Verifique sua conexão ou se as regras do Firebase estão bloqueadas.");
+        };
+
+        // --- INICIALIZAÇÃO ---
         window.addEventListener('load', async () => {
-            // 1. Configura data
             const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            document.getElementById('datePicker').value = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('datePicker').value = today.toISOString().split('T')[0];
 
             try {
-                // 2. Tenta conectar Firebase
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                
-                // 3. Tenta baixar configurações
                 const docRef = doc(db, "settings", "teams");
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     appConfig = docSnap.data();
                 } else {
-                    // Se não existe, cria
+                    appConfig = getDefaultData();
                     await setDoc(docRef, appConfig);
                 }
+                document.getElementById('loadingMask').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'flex';
             } catch (e) {
-                console.warn("Modo Offline ou Erro Config: ", e);
-                // Não mostra erro fatal, apenas segue com dados padrão
-                if(e.message.includes("API key")) alert("⚠️ FALTAM AS CHAVES DO FIREBASE NO CÓDIGO!");
+                console.error("Erro Fatal:", e);
+                document.getElementById('loadingText').innerHTML = `<span style="color:red">Erro Conexão: ${e.message}</span>`;
+                document.getElementById('cancelLoad').style.display = 'block';
+                // Carrega modo offline para não travar
+                appConfig = getDefaultData();
             }
-            
-            // 4. Carrega a tela (Mesmo se o Firebase falhar, isso roda)
-            document.getElementById('loadingMask').style.display = 'none';
-            document.getElementById('loginScreen').style.display = 'flex';
-            window.changeDate(); 
         });
 
         // --- LOGIN ---
         window.attemptLogin = function() {
             const u = document.getElementById('userInput').value;
             const p = document.getElementById('passInput').value;
-            if(u === "SUPERVISORSURFLAND" && p === "meupapitobenja") {
-                isAdmin = true;
-                showApp();
-            } else {
-                document.getElementById('loginError').style.display = 'block';
-            }
+            if(u === "SUPERVISORSURFLAND" && p === "meupapitobenja") { isAdmin = true; showApp(); } 
+            else { document.getElementById('loginError').style.display = 'block'; }
         };
 
         window.staffLogin = function() { isAdmin = false; showApp(); };
@@ -243,37 +239,33 @@
             const dateStr = document.getElementById('datePicker').value;
             if(!dateStr) return;
 
-            // Tratamento de fuso horário simples
-            const parts = dateStr.split('-');
-            const selDate = new Date(parts[0], parts[1]-1, parts[2]);
+            const selDate = new Date(dateStr + "T00:00:00");
             const today = new Date(); today.setHours(0,0,0,0);
-            
-            // Verifica bloqueio (Data menor que hoje)
             isLocked = (selDate < today);
+            
             document.getElementById('lockedMessage').style.display = isLocked ? 'block' : 'none';
             if(document.getElementById('btnSave')) document.getElementById('btnSave').disabled = isLocked;
 
-            // Gera localmente primeiro (para ser rápido)
-            currentDayData = generateMathSchedule(dateStr);
-            renderTable(currentDayData, dateStr);
-
-            // Se tiver banco, tenta buscar dados salvos
-            if(db) {
-                try {
-                    const dayRef = doc(db, "days", dateStr);
-                    const daySnap = await getDoc(dayRef);
-                    if(daySnap.exists()) {
-                        currentDayData = daySnap.data().entries;
-                        renderTable(currentDayData, dateStr);
-                    } else if(!isLocked && isAdmin) {
-                        // Salva o gerado automático se não existir
-                        await setDoc(dayRef, { entries: currentDayData });
-                    }
-                } catch(e) { console.log("Offline mode"); }
+            showLoading("Carregando Escala...");
+            try {
+                const dayRef = doc(db, "days", dateStr);
+                const daySnap = await getDoc(dayRef);
+                if(daySnap.exists()) {
+                    currentDayData = daySnap.data().entries;
+                } else {
+                    currentDayData = generateMathSchedule(dateStr);
+                    if(!isLocked) await setDoc(dayRef, { entries: currentDayData });
+                }
+                renderTable(currentDayData, dateStr);
+            } catch(e) { 
+                console.error(e); 
+                // Fallback local se der erro no banco
+                currentDayData = generateMathSchedule(dateStr);
+                renderTable(currentDayData, dateStr);
             }
+            document.getElementById('loadingMask').style.display = 'none';
         };
 
-        // --- LÓGICA DE ROTAÇÃO (V20 - Corrigida) ---
         function generateMathSchedule(dateStr) {
             const parts = dateStr.split('-');
             const d = new Date(parts[0], parts[1]-1, parts[2]);
@@ -283,9 +275,9 @@
             const isKirra = (Math.abs(diffTime) % 2) === 0;
             const shiftIndex = Math.floor(Math.abs(diffTime) / 2);
 
-            const listGuides = isKirra ? (appConfig.kirraGuides || []) : (appConfig.mundakaGuides || []);
-            const listGVs = isKirra ? (appConfig.kirraGVs || []) : (appConfig.mundakaGVs || []);
-            const listRot = isKirra ? (appConfig.kirraRot || []) : (appConfig.mundakaRot || []);
+            const listGuides = isKirra ? (appConfig.kirraGuides||[]) : (appConfig.mundakaGuides||[]);
+            const listGVs = isKirra ? (appConfig.kirraGVs||[]) : (appConfig.mundakaGVs||[]);
+            const listRot = isKirra ? (appConfig.kirraRot||[]) : (appConfig.mundakaRot||[]);
             const listFree = appConfig.freelancers || [];
 
             let schedule = [];
@@ -351,12 +343,12 @@
             const tbody = document.getElementById('scheduleBody');
             const banner = document.getElementById('teamBanner');
             tbody.innerHTML = "";
-            
             const parts = dateStr.split('-');
             const d = new Date(parts[0], parts[1]-1, parts[2]);
-            const diff = Math.floor((d - BASE_DATE) / (1000 * 60 * 60 * 24));
+            const oneDay = 24 * 60 * 60 * 1000;
+            const diff = Math.floor((d - BASE_DATE) / oneDay);
             const isKirra = (Math.abs(diff) % 2) === 0;
-
+            
             if(isLocked) { banner.textContent = "HISTÓRICO BLOQUEADO"; banner.className = "team-banner bg-locked"; }
             else { banner.textContent = isKirra ? "Equipe: KIRRA" : "Equipe: MUNDAKA"; banner.className = isKirra ? "team-banner bg-kirra" : "team-banner bg-mundaka"; }
 
@@ -376,10 +368,9 @@
 
         // --- ACTIONS ---
         window.saveCurrentDay = async function() {
-            if(!db) return alert("Erro: Firebase não conectado.");
             const dateStr = document.getElementById('datePicker').value;
             if(!dateStr || isLocked) return;
-            document.getElementById('loadingMask').style.display = 'flex';
+            showLoading("Salvando...");
             try {
                 await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
                 alert("Salvo no Banco de Dados!");
@@ -392,7 +383,6 @@
             document.getElementById(id).style.display = 'block';
             if(id === 'configPanel') renderConfig();
             if(id === 'statsPanel') {
-                if(!db) return alert("Firebase desconectado.");
                 const div = document.getElementById('statsContent');
                 div.innerHTML = "Carregando...";
                 const snap = await getDocs(collection(db, "days"));
@@ -436,22 +426,35 @@
         window.addItem = (k) => { if(!appConfig[k]) appConfig[k]=[]; appConfig[k].push("Novo"); renderConfig(); };
         window.removeItem = (k, i) => { if(confirm("Apagar?")) { appConfig[k].splice(i, 1); renderConfig(); } };
 
+        // SAVE CONFIG ROBUSTO
         window.saveConfigToFirebase = async function() {
-            if(!db) return alert("Firebase desconectado.");
-            document.getElementById('loadingMask').style.display = 'flex';
+            showLoading("Salvando configurações...");
             try {
+                // 1. Salva Config
                 await setDoc(doc(db, "settings", "teams"), appConfig);
+                
+                // 2. Recalcula dia atual
                 const dateStr = document.getElementById('datePicker').value;
                 if(dateStr && !isLocked) {
                     currentDayData = generateMathSchedule(dateStr); 
                     await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
+                    renderTable(currentDayData, dateStr);
                 }
-                alert("Configurações Salvas e Tela Atualizada!");
-                window.changeDate();
+                alert("Sucesso!");
                 window.closeAllPanels();
-            } catch(e) { alert("Erro: " + e.message); }
+            } catch(e) { 
+                alert("Erro: " + e.message); 
+            }
             document.getElementById('loadingMask').style.display = 'none';
         };
+
+        function getDefaultData() {
+            return { kirraGuides: ["K1"], kirraGVs: ["KV1"], kirraRot: ["KR1"], mundakaGuides: ["M1"], mundakaGVs: ["MV1"], mundakaRot: ["MR1"], freelancers: ["F1"] };
+        }
     </script>
 </body>
 </html>
+    </script>
+</body>
+</html>
+
