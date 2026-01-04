@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surfland Manager 20.0 (Rotação Real)</title>
+    
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2909/2909803.png">
+    
+    <style>
+        :root { --primary: #0277bd; --secondary: #00838f; --accent: #f9a825; --bg: #f4f7f6; --text: #263238; --danger: #c62828; --success: #2e7d32; --locked: #9e9e9e; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        #loadingMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; width: 320px; color: var(--text); }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cfd8dc; border-radius: 6px; box-sizing: border-box; }
+        .btn-login { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        
+        #appScreen { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; padding-bottom: 80px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .controls { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 20px; border-left: 5px solid var(--accent); }
+        
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; font-size: 1.1em; }
+        .btn-secondary { background: #546e7a; color: white; }
+        .btn-info { background: #0288d1; color: white; }
+
+        .schedule-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .team-banner { text-align: center; padding: 20px; color: white; font-size: 1.8em; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        .bg-kirra { background: linear-gradient(45deg, #1976d2, #42a5f5); }
+        .bg-mundaka { background: linear-gradient(45deg, #388e3c, #66bb6a); }
+        .bg-locked { background: #757575; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; vertical-align: middle; }
+        th { background: #fafafa; color: #546e7a; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        
+        .editable-name { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        .status-select { padding: 6px; border-radius: 4px; font-weight: bold; width: 130px; }
+        .status-fixo { background: #e8f5e9; color: #2e7d32; }
+        .status-rotativo { background: #e3f2fd; color: #1565c0; }
+        .status-free { background: #fff3e0; color: #ef6c00; }
+        .role-guia { color: #0277bd; font-weight: 800; }
+        .role-gv { color: #455a64; font-weight: 600; }
+        .row-disabled { opacity: 0.6; background: #fafafa; }
+        .check-status { transform: scale(1.3); cursor: pointer; accent-color: var(--success); }
+
+        .panel { display: none; position: fixed; top: 0; right: 0; width: 850px; height: 100%; background: white; box-shadow: -5px 0 25px rgba(0,0,0,0.2); z-index: 100; overflow-y: auto; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 99; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #ddd; }
+        .panel-content { padding: 20px; }
+
+        .list-row { display: flex; align-items: center; margin-bottom: 8px; gap: 5px; }
+        .list-row input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-trash { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .config-section-title { font-weight: bold; color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 5px; display: block; }
+        
+        #lockedMessage { display: none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 6px; margin-top: 10px; font-weight: bold; text-align: center; border: 1px solid #ffcdd2; }
+    </style>
+</head>
+<body>
+
+    <div id="loadingMask"><div class="loader"></div><h3 style="margin-top:20px; color:#555;">Conectando ao Firebase...</h3></div>
+
+    <div id="loginScreen" style="display:none;">
+        <div class="login-box">
+            <h2 style="color:var(--primary); margin-bottom: 5px; letter-spacing: 1px;">SURFLAND</h2>
+            <p style="margin-top:0; color:#777; font-size:0.9em;">Gestão Online (Firebase)</p>
+            <div id="loginError" style="color: #d32f2f; background:#ffebee; padding:10px; border-radius:4px; font-size: 0.9em; display: none; margin-bottom: 15px;">Login Incorreto</div>
+            <input type="text" id="userInput" placeholder="Usuário">
+            <input type="password" id="passInput" placeholder="Senha">
+            <button class="btn-login" type="button" onclick="window.attemptLogin()">ENTRAR (SUPERVISOR)</button>
+            <button class="btn-login" style="background:#546e7a; margin-top:10px;" type="button" onclick="window.staffLogin()">Acesso Equipe</button>
+        </div>
+    </div>
+
+    <div id="appScreen">
+        <div class="header-bar">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <h2 id="pageTitle" style="margin:0; color:var(--primary);">Organizador</h2>
+                <span id="userBadge" style="padding:4px 8px; border-radius:4px; font-weight:bold; font-size:0.8em;"></span>
+            </div>
+            <span class="logout-link" onclick="location.reload()" style="cursor:pointer; color:red;">Sair</span>
+        </div>
+
+        <div class="controls">
+            <div style="flex-grow: 1;">
+                <label style="font-weight:bold; margin-right: 10px; color: var(--text);">📅 Data:</label>
+                <input type="date" id="datePicker" onchange="window.changeDate()" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family:inherit; font-size: 1rem;">
+                <div id="lockedMessage">🔒 DATA PASSADA - APENAS LEITURA</div>
+            </div>
+
+            <div style="display:flex; gap: 10px; flex-wrap:wrap;">
+                <button class="btn-info" onclick="window.openPanel('statsPanel')">📊 Placar de Justiça</button>
+                <div id="adminControls" style="display:none; gap: 10px;">
+                    <button id="btnSave" class="btn-success" onclick="window.saveCurrentDay()">💾 SALVAR TUDO</button>
+                    <button class="btn-secondary" onclick="window.openPanel('configPanel')">⚙️ Configurar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="schedule-container">
+            <div id="teamBanner" class="team-banner">...</div>
+            <table id="scheduleTable">
+                <thead>
+                    <tr><th width="40">OK</th><th width="150">Função</th><th>Colaborador</th><th width="140">Status</th></tr>
+                </thead>
+                <tbody id="scheduleBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="window.closeAllPanels()"></div>
+    
+    <div id="statsPanel" class="panel"><div class="panel-header"><h3>📊 Placar de Justiça (Desde 08/01/26)</h3><button onclick="window.closeAllPanels()">×</button></div><div class="panel-content" id="statsContent"></div></div>
+
+    <div id="configPanel" class="panel">
+        <div class="panel-header"><h3>👥 Equipes</h3><button onclick="window.closeAllPanels()">×</button></div>
+        <div class="panel-content">
+            <button class="btn-success" style="width:100%; margin-bottom:20px;" onclick="window.saveConfigToFirebase()">💾 SALVAR E ATUALIZAR TELA</button>
+            <div class="config-grid">
+                <div>
+                    <h3 style="color:var(--primary); margin:0;">🔵 KIRRA</h3>
+                    <br><span class="config-section-title">Guias FIXOS</span><div id="listKirraGuides"></div>
+                    <br><span class="config-section-title">GVs FIXOS</span><div id="listKirraGVs"></div>
+                    <br><span class="config-section-title">ROTATIVOS</span><div id="listKirraRot"></div>
+                </div>
+                <div>
+                    <h3 style="color:var(--success); margin:0;">🟢 MUNDAKA</h3>
+                    <br><span class="config-section-title">Guias FIXOS</span><div id="listMundakaGuides"></div>
+                    <br><span class="config-section-title">GVs FIXOS</span><div id="listMundakaGVs"></div>
+                    <br><span class="config-section-title">ROTATIVOS</span><div id="listMundakaRot"></div>
+                </div>
+            </div>
+            <hr><h4 class="config-section-title">🟠 Freelancers (Banco)</h4><div id="listFreelancers" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // SUAS CHAVES DO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdtXwtt4QUImtxuMdWoHOSwohJYA257DA",
+            authDomain: "programa-de-escalas2.firebaseapp.com",
+            projectId: "programa-de-escalas2",
+            storageBucket: "programa-de-escalas2.firebasestorage.app",
+            messagingSenderId: "702700056246",
+            appId: "1:702700056246:web:7676a98f4a025463d24017"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let appConfig = {};
+        let currentDayData = [];
+        let isAdmin = false;
+        let isLocked = false;
+        
+        // Data Base corrigida para garantir 04/01 = Kirra
+        const BASE_DATE = new Date(2026, 0, 4); // 4 de Janeiro de 2026
+
+        // --- INICIALIZAÇÃO ---
+        window.addEventListener('load', async () => {
+            try {
+                const docRef = doc(db, "settings", "teams");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    appConfig = docSnap.data();
+                } else {
+                    appConfig = getDefaultData();
+                    await setDoc(docRef, appConfig);
+                }
+                
+                const today = new Date();
+                document.getElementById('datePicker').value = today.toISOString().split('T')[0];
+                
+                document.getElementById('loadingMask').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'flex';
+            } catch (e) {
+                console.error("Erro Fatal:", e);
+                document.getElementById('loadingMask').innerHTML = `<h3 style="color:red">Erro de Conexão: ${e.message}</h3><p>Verifique se as regras do Firestore estão abertas.</p>`;
+            }
+        });
+
+        // --- LOGIN ---
+        window.attemptLogin = function() {
+            const u = document.getElementById('userInput').value;
+            const p = document.getElementById('passInput').value;
+            if(u === "SUPERVISORSURFLAND" && p === "meupapitobenja") {
+                isAdmin = true;
+                showApp();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        };
+
+        window.staffLogin = function() { isAdmin = false; showApp(); };
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'block';
+            const badge = document.getElementById('userBadge');
+            const title = document.getElementById('pageTitle');
+            if(isAdmin) {
+                title.textContent = "Organizador";
+                badge.textContent = "SUPERVISOR"; badge.style.backgroundColor = "#e8f5e9"; badge.style.color = "#2e7d32";
+                document.getElementById('adminControls').style.display = 'flex';
+            } else {
+                title.textContent = "GUARDA-VIDAS MONSTRÃO DA SURFLAND";
+                badge.textContent = "VISUALIZAÇÃO"; badge.style.backgroundColor = "#fff3e0"; badge.style.color = "#ef6c00";
+            }
+            window.changeDate();
+        }
+
+        // --- LÓGICA DE DATAS ---
+        window.changeDate = async function() {
+            const dateStr = document.getElementById('datePicker').value;
+            if(!dateStr) return;
+
+            const selDate = new Date(dateStr + "T00:00:00");
+            const today = new Date(); today.setHours(0,0,0,0);
+            isLocked = (selDate < today);
+            
+            document.getElementById('lockedMessage').style.display = isLocked ? 'block' : 'none';
+            if(document.getElementById('btnSave')) document.getElementById('btnSave').disabled = isLocked;
+
+            document.getElementById('loadingMask').style.display = 'flex';
+            try {
+                const dayRef = doc(db, "days", dateStr);
+                const daySnap = await getDoc(dayRef);
+                if(daySnap.exists()) {
+                    currentDayData = daySnap.data().entries;
+                } else {
+                    currentDayData = generateMathSchedule(dateStr);
+                    if(!isLocked) await setDoc(dayRef, { entries: currentDayData });
+                }
+                renderTable(currentDayData, dateStr);
+            } catch(e) { console.error(e); }
+            document.getElementById('loadingMask').style.display = 'none';
+        };
+
+        // --- LÓGICA DE ROTAÇÃO TOTAL (V20) ---
+        function generateMathSchedule(dateStr) {
+            // Conversão segura de datas
+            const parts = dateStr.split('-');
+            const d = new Date(parts[0], parts[1]-1, parts[2]); // Ano, Mes (0-11), Dia
+            
+            // Diferença em dias inteiros
+            const oneDay = 24 * 60 * 60 * 1000;
+            const diffTime = Math.floor((d - BASE_DATE) / oneDay);
+            
+            // Equipe: 0=Kirra, 1=Mundaka (Dia sim, dia não)
+            const isKirra = (Math.abs(diffTime) % 2) === 0;
+            
+            // Índice de Rotação (incrementa a cada vez que a equipe trabalha)
+            const shiftIndex = Math.floor(Math.abs(diffTime) / 2);
+
+            const listGuides = isKirra ? appConfig.kirraGuides : appConfig.mundakaGuides;
+            const listGVs = isKirra ? appConfig.kirraGVs : appConfig.mundakaGVs;
+            const listRot = isKirra ? appConfig.kirraRot : appConfig.mundakaRot;
+
+            let schedule = [];
+            
+            // --- PARTE A: TIME DE GUIAS (8 Vagas) ---
+            // 1. Coleta quem vai ser Guia hoje
+            let guidePool = [];
+            
+            // a) Pega todos os Guias Fixos
+            listGuides.forEach(n => guidePool.push({name: n, status: "FIXO"}));
+            
+            // b) Completa com Rotativos
+            const slotsNeed = 8 - guidePool.length;
+            const rotOffsetGuides = (shiftIndex * slotsNeed) % Math.max(1, listRot.length);
+            
+            for(let i=0; i<slotsNeed; i++) {
+                let idx = (rotOffsetGuides + i) % listRot.length;
+                guidePool.push({name: listRot[idx], status: "ROTATIVO"});
+            }
+
+            // c) Roda o Carrossel dos Guias (para mudar a posição 1-8)
+            guidePool = rotateArray(guidePool, shiftIndex);
+
+            // d) Adiciona na Escala
+            for(let i=0; i<8; i++) {
+                if(i < guidePool.length) {
+                    schedule.push({ role: `Guide ${i+1}`, name: guidePool[i].name, status: guidePool[i].status, active: true });
+                } else {
+                    schedule.push({ role: `Guide ${i+1}`, name: "VAGA", status: "ROTATIVO", active: true });
+                }
+            }
+
+            // --- PARTE B: TIME DE GUARDA-VIDAS (12 Vagas) ---
+            // AQUI ESTÁ A MUDANÇA: Juntar TODOS (Fixos, Rotativos, Free) e rotacionar TUDO
+            let gvTotalPool = [];
+            
+            // a) GVs Fixos
+            listGVs.forEach(n => gvTotalPool.push({name: n, status: "FIXO"}));
+            
+            // b) Rotativos que SOBRARAM (não foram guias)
+            const totalRot = listRot.length;
+            const rotUsed = slotsNeed;
+            const rotRemaining = totalRot - rotUsed;
+            for(let i=0; i<rotRemaining; i++) {
+                let idx = (rotOffsetGuides + rotUsed + i) % totalRot; // Continua de onde parou
+                gvTotalPool.push({name: listRot[idx], status: "ROTATIVO"});
+            }
+
+            // c) Freelancers (Global)
+            // Usa o número total de dias para rodar os free, não só o turno da equipe
+            const gvSoFar = gvTotalPool.length;
+            const freeNeed = 12 - gvSoFar;
+            if(freeNeed > 0) {
+                // Rotação dos Freelancers baseada em diffTime (dias corridos)
+                const freeOffset = (Math.abs(diffTime) * freeNeed) % Math.max(1, appConfig.freelancers.length);
+                for(let i=0; i<freeNeed; i++) {
+                    let idx = (freeOffset + i) % appConfig.freelancers.length;
+                    gvTotalPool.push({name: appConfig.freelancers[idx], status: "FREELANCER"});
+                }
+            }
+
+            // d) MISTURA TOTAL E ROTAÇÃO (O "Liquidificador")
+            // Rotaciona a lista inteira baseada no turno da equipe
+            // Assim, quem era GV 1 vira GV 2, e o Freelancer que estava no 12 vai subindo para o 1
+            gvTotalPool = rotateArray(gvTotalPool, shiftIndex);
+
+            // e) Adiciona na Escala
+            for(let i=0; i<12; i++) {
+                if(i < gvTotalPool.length) {
+                    schedule.push({ 
+                        role: `Guarda-Vidas ${i+1}`, 
+                        name: gvTotalPool[i].name, 
+                        status: gvTotalPool[i].status, 
+                        active: true 
+                    });
+                } else {
+                    schedule.push({ role: `Guarda-Vidas ${i+1}`, name: "VAGA", status: "FREELANCER", active: true });
+                }
+            }
+
+            return schedule;
+        }
+
+        // Helper para rotacionar arrays
+        function rotateArray(arr, steps) {
+            if(!arr.length) return [];
+            const k = steps % arr.length;
+            // Pega o final e joga pro começo (rotação circular)
+            return arr.slice(arr.length - k).concat(arr.slice(0, arr.length - k));
+        }
+
+        function updateBanner(dateStr, forceKirra = null) {
+            var banner = document.getElementById('teamBanner');
+            var parts = dateStr.split('-');
+            var d = new Date(parts[0], parts[1]-1, parts[2]);
+            var diff = Math.floor((d - BASE_DATE) / (1000 * 60 * 60 * 24));
+            var isKirra = (Math.abs(diff) % 2) === 0;
+            
+            if(isDateLocked) { banner.textContent = "HISTÓRICO BLOQUEADO"; banner.className = "team-banner bg-locked"; }
+            else { banner.textContent = isKirra ? "Equipe: KIRRA" : "Equipe: MUNDAKA"; banner.className = isKirra ? "team-banner bg-kirra" : "team-banner bg-mundaka"; }
+        }
+
+        function renderTable(data, dateStr) {
+            const tbody = document.getElementById('scheduleBody');
+            tbody.innerHTML = "";
+            updateBanner(dateStr);
+
+            data.forEach((entry, idx) => {
+                const tr = document.createElement('tr');
+                if(!entry.active) tr.classList.add('row-disabled');
+                const disabled = isLocked ? "disabled" : "";
+                
+                const check = isAdmin ? `<input type="checkbox" class="check-status" ${entry.active?'checked':''} onchange="window.toggleActive(${idx})" ${disabled}>` : (entry.active ? '✅' : '❌');
+                const nameInput = isAdmin ? `<input class="editable-name" value="${entry.name}" onchange="window.editName(${idx}, this.value)" ${disabled}>` : `<b>${entry.name}</b>`;
+                const select = isAdmin ? `<select class="status-select status-${entry.status.toLowerCase()}" onchange="window.editStatus(${idx}, this)" ${disabled}><option value="FIXO" ${entry.status=='FIXO'?'selected':''}>FIXO</option><option value="ROTATIVO" ${entry.status=='ROTATIVO'?'selected':''}>ROTATIVO</option><option value="FREELANCER" ${entry.status=='FREELANCER'?'selected':''}>FREELANCER</option></select>` : `<span style="font-weight:bold">${entry.status}</span>`;
+                const roleClass = entry.role.includes("Guide") ? "role-guia" : "role-gv";
+                
+                tr.innerHTML = `<td>${check}</td><td class="${roleClass}">${entry.role}</td><td>${nameInput}</td><td>${select}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.saveCurrentDay = async function() {
+            const dateStr = document.getElementById('datePicker').value;
+            if(!dateStr || isLocked) return;
+            document.getElementById('loadingMask').style.display = 'flex';
+            try {
+                await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
+                alert("Salvo no Banco de Dados!");
+            } catch(e) { alert("Erro ao salvar: " + e.message); }
+            document.getElementById('loadingMask').style.display = 'none';
+        };
+
+        window.openPanel = async function(id) {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById(id).style.display = 'block';
+            if(id === 'configPanel') renderConfig();
+            if(id === 'statsPanel') {
+                const div = document.getElementById('statsContent');
+                div.innerHTML = "Carregando...";
+                const snap = await getDocs(collection(db, "days"));
+                let stats = {};
+                const CUTOFF_DATE = "2026-01-08"; 
+
+                snap.forEach(doc => { 
+                    if(doc.id < CUTOFF_DATE) return;
+                    doc.data().entries.forEach(entry => {
+                        let n = entry.name.trim();
+                        if(!n || n.includes("Vaga") || n.includes("Free")) return;
+                        if(!stats[n]) stats[n] = { g: 0, v: 0, t: 0 };
+                        if(entry.role.includes("Guide")) stats[n].g++; else stats[n].v++;
+                        stats[n].t++;
+                    }); 
+                });
+                let html = `<table style="width:100%"><tr><th>Nome</th><th>Total</th><th>Guias</th><th>GVs</th></tr>`;
+                Object.keys(stats).sort().forEach(n => { html += `<tr><td>${n}</td><td>${stats[n].t}</td><td>${stats[n].g}</td><td>${stats[n].v}</td></tr>`; });
+                div.innerHTML = html + "</table>";
+            }
+        };
+
+        window.closeAllPanels = function() { document.querySelectorAll('.panel').forEach(p=>p.style.display='none'); document.getElementById('overlay').style.display='none'; };
+
+        window.toggleActive = (i) => { currentDayData[i].active = !currentDayData[i].active; };
+        window.editName = (i, val) => { currentDayData[i].name = val; };
+        window.editStatus = (i, el) => { currentDayData[i].status = el.value; el.className = "status-select status-" + el.value.toLowerCase(); };
+
+        function renderConfig() {
+            const keys = ['kirraGuides', 'kirraGVs', 'kirraRot', 'mundakaGuides', 'mundakaGVs', 'mundakaRot', 'freelancers'];
+            keys.forEach(k => {
+                const div = document.getElementById('list' + k.charAt(0).toUpperCase() + k.slice(1));
+                if(div) {
+                    div.innerHTML = "";
+                    appConfig[k].forEach((val, i) => {
+                        div.innerHTML += `<div class="list-row"><input value="${val}" onchange="window.updateAppConfig('${k}', ${i}, this.value)"><button class="btn-trash" onclick="window.removeItem('${k}', ${i})">🗑️</button></div>`;
+                    });
+                    div.innerHTML += `<small style="color:blue; cursor:pointer" onclick="window.addItem('${k}')">+ Adicionar</small>`;
+                }
+            });
+        }
+        window.updateAppConfig = (k, i, v) => { appConfig[k][i] = v; };
+        window.addItem = (k) => { appConfig[k].push("Novo"); renderConfig(); };
+        window.removeItem = (k, i) => { if(confirm("Apagar?")) { appConfig[k].splice(i, 1); renderConfig(); } };
+
+        window.saveConfigToFirebase = async function() {
+            document.getElementById('loadingMask').style.display = 'flex';
+            try {
+                await setDoc(doc(db, "settings", "teams"), appConfig);
+                const dateStr = document.getElementById('datePicker').value;
+                if(dateStr && !isLocked) {
+                    currentDayData = generateMathSchedule(dateStr); 
+                    await setDoc(doc(db, "days", dateStr), { entries: currentDayData });
+                }
+                alert("Configurações Salvas e Tela Atualizada!");
+                window.changeDate();
+                window.closeAllPanels();
+            } catch(e) { alert("Erro: " + e.message); }
+            document.getElementById('loadingMask').style.display = 'none';
+        };
+
+        function getDefaultData() {
+            return { kirraGuides: ["K1"], kirraGVs: ["KV1"], kirraRot: ["KR1"], mundakaGuides: ["M1"], mundakaGVs: ["MV1"], mundakaRot: ["MR1"], freelancers: ["F1"] };
+        }
+    </script>
+</body>
+</html>
